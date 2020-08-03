@@ -7,6 +7,7 @@ import numpy as np
 from tensorflow import keras
 from loaddata import LoadData
 import tensorflow as tf
+from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import KFold
 from model import load_model
 
@@ -21,11 +22,9 @@ class Classifier(LoadData):
         super(Classifier, self).__init__()
         self.model = None
 
-    def train(self):
+    def train_with_k_fold(self):
         n_folds = 5
         kfold = KFold(n_folds, shuffle=True, random_state=1)
-        training_accuracy = []
-        validation_accuracy = []
         for k, (train_ix, test_ix) in enumerate(kfold.split(self.train_images)):
             # define and load model
             model = load_model()
@@ -39,12 +38,38 @@ class Classifier(LoadData):
             print('Fold {} Accuracy> {}'.format(k+1, acc * 100.0))
             self.model = model
 
+    def train_normal(self):
+        self.model = load_model()
+        self.save_plotted_model()
+        each_epoch = dict()
+        fp = open('accuracy.csv', 'w')
+        fp.write('epoch, loss,accuracy,val_loss, val_accuracy\n')
+        for epoch in range(25):
+            history = self.model.fit(self.train_images, self.train_labels, epochs=1, batch_size=32,
+                                validation_data=(self.test_images, self.test_labels), verbose=1)
+            msg = '{},'.format(epoch)
+            for _key in history.history.keys():
+                if _key not in each_epoch:
+                    each_epoch[_key] = []
+                each_epoch[_key].append(history.history[_key][0])
+                msg += '{:.4f},'.format(history.history[_key][0])
+
+            fp.write(msg[:-1] + '\n')
+        fp.close()
+        print(each_epoch)
+
+
+
+    def save_plotted_model(self):
+
+        print("Saving plotted model")
+        plot_model(self.model, to_file='model.png', show_shapes=True)
+
     def test_accuracy(self):
         pred_y = self.model.predict(self.test_images)
 
-
     def main(self):
-        self.train()
+        self.train_normal()
 
 
 if __name__ == "__main__":
