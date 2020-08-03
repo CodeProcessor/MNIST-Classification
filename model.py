@@ -3,8 +3,10 @@ Created on 8/3/20
 
 @author: dulanj
 '''
-import tensorflow as tf
+import os
+
 import numpy as np
+import tensorflow as tf
 
 
 def load_model(verbose=1):
@@ -43,32 +45,44 @@ def create_encoder_decorder_model():
     autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
     return autoencoder
 
+
 def create_encoder_decorder_model_v2():
-    input_img = tf.keras.layers.Input(shape=(28, 28, 1))  # adapt this if using `channels_first` image data format
+    # Input
+    x = tf.keras.layers.Input(name='inputs', shape=(28, 28, 1), dtype='float32')
+    o = x
 
-    x = tf.keras.layers.Conv2D(16, (3, 3), activation='relu', padding='same')(input_img)
-    x = tf.keras.layers.MaxPooling2D((2, 2), padding='same')(x)
-    x = tf.keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = tf.keras.layers.MaxPooling2D((2, 2), padding='same')(x)
-    x = tf.keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    encoded = tf.keras.layers.MaxPooling2D((2, 2), padding='same')(x)
+    # Encoder
+    o = tf.keras.layers.Conv2D(32, (3, 3), activation=tf.keras.layers.LeakyReLU(alpha=0.1), padding='same',
+                               strides=(1, 1), name='en_conv1')(o)
+    o = tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same', name='en_pool1')(o)
+    o = tf.keras.layers.Conv2D(32, (3, 3), activation=tf.keras.layers.LeakyReLU(alpha=0.1), padding='same',
+                               strides=(1, 1), name='en_conv2')(o)
+    enc = tf.keras.layers.MaxPooling2D((2, 2), strides=(2, 2), padding='same', name='en_pool2')(o)
 
-    # at this point the representation is (4, 4, 8) i.e. 128-dimensional
+    # Decoder
+    o = tf.keras.layers.Conv2D(32, (3, 3), activation=tf.keras.layers.LeakyReLU(alpha=0.1), padding='same',
+                               strides=(1, 1), name='de_conv1')(enc)
+    o = tf.keras.layers.UpSampling2D((2, 2), name='upsampling1')(o)
+    o = tf.keras.layers.Conv2D(32, (3, 3), activation=tf.keras.layers.LeakyReLU(alpha=0.1), padding='same',
+                               strides=(1, 1), name='de_conv2')(o)
+    o = tf.keras.layers.UpSampling2D((2, 2), name='upsampling2')(o)
+    dec = tf.keras.layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same', strides=(1, 1), name='de_conv3')(o)
 
-    x = tf.keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(encoded)
-    x = tf.keras.layers.UpSampling2D((2, 2))(x)
-    x = tf.keras.layers.Conv2D(8, (3, 3), activation='relu', padding='same')(x)
-    x = tf.keras.layers.UpSampling2D((2, 2))(x)
-    x = tf.keras.layers.Conv2D(16, (3, 3), activation='relu')(x)
-    x = tf.keras.layers.UpSampling2D((2, 2))(x)
-    decoded = tf.keras.layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+    # Print network summary
+    tf.keras.Model(inputs=x, outputs=dec).summary()
 
-    autoencoder = tf.keras.Model(input_img, decoded)
-    autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
-    return autoencoder
+    model = tf.keras.Model(inputs=x, outputs=dec)
+    model.compile(optimizer='adadelta', loss='binary_crossentropy')
 
-def add_noise(x_train, x_test, noise_factor = 0.5):
-    # noise_factor = 0.5
+    weights_name = 'autoenc3_weight.bin'
+    # model.load_weights('autoenc3_weight.bin')
+    if os.path.exists(weights_name):
+        model.load_weights(weights_name)
+
+    return model
+
+
+def add_noise(x_train, x_test, noise_factor=0.5):
     x_train_noisy = x_train + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_train.shape)
     x_test_noisy = x_test + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_test.shape)
     x_train_noisy = np.clip(x_train_noisy, 0, 1)

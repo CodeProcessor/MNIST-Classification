@@ -3,12 +3,11 @@ Created on 7/18/20
 
 @author: dulanj
 '''
-import numpy as np
-from tensorflow import keras
-from loaddata import LoadData
 import tensorflow as tf
-from sklearn.model_selection import KFold
-from model import load_model, create_encoder_decorder_model, create_encoder_decorder_model_v2
+
+from loaddata import LoadData
+from model import add_noise
+from model import load_model, create_encoder_decorder_model_v2
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
@@ -20,59 +19,40 @@ class Classifier(LoadData):
     def __init__(self):
         super(Classifier, self).__init__()
         self.model = None
-    
-    def add_noise(self, x_train, x_test):
-        noise_factor = 0.5
-        x_train_noisy = x_train + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_train.shape)
-        x_test_noisy = x_test + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_test.shape)
-        x_train_noisy = np.clip(x_train_noisy, 0, 1)
-        x_test_noisy = np.clip(x_test_noisy, 0, 1)
-        return x_train_noisy, x_test_noisy
-
-    def train_encorder_decoder_network(self):
-        (trainX, trainY), (testX, testY) = self.load_raw()
-        autoencoder_model = create_encoder_decorder_model()
-        autoencoder_model.fit(trainX, trainX,
-                        epochs=50,
-                        batch_size=256,
-                        shuffle=True,
-                        validation_data=(testX, testX))
+        self.auto_encoder_model = None
 
     def train_encorder_decoder_network_v2(self):
-        autoencoder_model = create_encoder_decorder_model_v2()
-        autoencoder_model.fit(self.train_images, self.train_images,
-                        epochs=50,
-                        batch_size=256,
-                        shuffle=True,
-                        validation_data=(self.test_images, self.test_images))
+        self.auto_encoder_model = create_encoder_decorder_model_v2()
+        x_train_noisy, x_test_noisy = add_noise(self.train_images, self.test_images, 1)
+        self.auto_encoder_model.fit(x_train_noisy, self.train_images,
+                                    epochs=50,
+                                    batch_size=256,
+                                    shuffle=True,
+                                    validation_data=(x_test_noisy, self.test_images))
 
-    def train(self):
-        n_folds = 5
-        kfold = KFold(n_folds, shuffle=True, random_state=1)
-        self.train_images, self.test_images = self.add_noise(self.train_images, self.test_images)
-        for k, (train_ix, test_ix) in enumerate(kfold.split(self.train_images)):
-            # define and load model
-            model = load_model()
+    def train_with_denoised_data(self):
+        self.model = load_model()
 
-            # select rows for train and test
-            trainX, trainY, testX, testY = self.train_images[train_ix], self.train_labels[train_ix], \
-                                           self.train_images[test_ix], self.train_labels[test_ix]
-            # fit model
-            history = model.fit(trainX, trainY, epochs=5, batch_size=32, validation_data=(testX, testY), verbose=1)
-            # evaluate model
-            _, acc = model.evaluate(self.test_images, self.test_labels, verbose=0)
-            print('Fold {} Accuracy> {}'.format(k+1, acc * 100.0))
-            self.model = model
+        x_train_noisy, x_test_noisy = add_noise(self.train_images, self.test_images, noise_factor=1)
 
-    def test_accuracy(self):
-        pred_y = self.model.predict(self.test_images)
+        x_train_denoised = self.auto_encoder_model.predict(x_train_noisy)
+        x_test_denoised = self.auto_encoder_model.predict(x_test_noisy)
 
+        for epoch in range(25):
+            history = self.model.fit(x_train_denoised, self.train_labels, epochs=1, batch_size=32,
+                                     validation_data=(x_test_denoised, self.test_labels), verbose=1)
 
-    def main(self):
-        self.train()
+    def train_with_noised_data(self):
+        self.model = load_model()
+
+        x_train_noisy, x_test_noisy = add_noise(self.train_images, self.test_images, noise_factor=1)
+
+        for epoch in range(25):
+            history = self.model.fit(x_train_noisy, self.train_labels, epochs=1, batch_size=32,
+                                     validation_data=(x_test_noisy, self.test_labels), verbose=1)
 
 
 if __name__ == "__main__":
     obj = Classifier()
     obj.train_encorder_decoder_network_v2()
-    # obj.main()
+    obj.train_with_denoised_data()
