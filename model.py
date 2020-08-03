@@ -8,17 +8,22 @@ import tensorflow as tf
 
 def load_model():
     inputs = tf.keras.Input(batch_size=32, shape=(28, 28, 1))
-    x = tf.keras.layers.Conv2D(32, (3, 3), activation=tf.nn.relu)(inputs)
+    x = tf.keras.layers.Conv2D(24, (5, 5), activation=tf.nn.relu)(inputs)
+    x = tf.keras.layers.MaxPool2D((2, 2))(x)
+    x = tf.keras.layers.Conv2D(16, (3, 3), activation=tf.nn.relu)(x)
     x = tf.keras.layers.MaxPool2D((2, 2))(x)
     x = tf.keras.layers.Flatten()(x)
-    x = tf.keras.layers.Dense(40, activation=tf.nn.relu)(x)
-    outputs = tf.keras.layers.Dense(10, activation=tf.nn.softmax)(x)
+    x = tf.keras.layers.Dense(64, activation=tf.nn.relu)(x)
+    x = tf.keras.layers.Dense(16, activation=tf.nn.relu)(x)
+    outputs = tf.keras.layers.Dense(10, activation=tf.nn.sigmoid)(x)
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     # compile model
-    opt = tf.keras.optimizers.SGD(lr=0.01, momentum=0.9)
+    opt = tf.keras.optimizers.SGD(lr=0.01, momentum=0.9, decay=0.0001)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+    print(model.summary())
 
     return model
+
 
 def create_encoder_decorder_model():
     # this is the size of our encoded representations
