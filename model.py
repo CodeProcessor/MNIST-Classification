@@ -4,9 +4,10 @@ Created on 8/3/20
 @author: dulanj
 '''
 import tensorflow as tf
+import numpy as np
 
 
-def load_model():
+def load_model(verbose=1):
     inputs = tf.keras.Input(batch_size=32, shape=(28, 28, 1))
     x = tf.keras.layers.Conv2D(24, (5, 5), activation=tf.nn.relu)(inputs)
     x = tf.keras.layers.MaxPool2D((2, 2))(x)
@@ -20,7 +21,8 @@ def load_model():
     # compile model
     opt = tf.keras.optimizers.SGD(lr=0.01, momentum=0.9, decay=0.0001)
     model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
-    print(model.summary())
+    if verbose == 1:
+        print(model.summary())
 
     return model
 
@@ -64,3 +66,11 @@ def create_encoder_decorder_model_v2():
     autoencoder = tf.keras.Model(input_img, decoded)
     autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
     return autoencoder
+
+def add_noise(x_train, x_test, noise_factor = 0.5):
+    # noise_factor = 0.5
+    x_train_noisy = x_train + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_train.shape)
+    x_test_noisy = x_test + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_test.shape)
+    x_train_noisy = np.clip(x_train_noisy, 0, 1)
+    x_test_noisy = np.clip(x_test_noisy, 0, 1)
+    return x_train_noisy, x_test_noisy
