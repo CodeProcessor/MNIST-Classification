@@ -3,12 +3,11 @@ Created on 7/18/20
 
 @author: dulanj
 '''
-import numpy as np
-from tensorflow import keras
-from loaddata import LoadData
 import tensorflow as tf
-from tensorflow.keras.utils import plot_model
 from sklearn.model_selection import KFold
+from tensorflow.keras.utils import plot_model
+
+from loaddata import LoadData
 from model import load_model
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -35,7 +34,7 @@ class Classifier(LoadData):
             history = model.fit(trainX, trainY, epochs=5, batch_size=32, validation_data=(testX, testY), verbose=1)
             # evaluate model
             _, acc = model.evaluate(self.test_images, self.test_labels, verbose=0)
-            print('Fold {} Accuracy> {}'.format(k+1, acc * 100.0))
+            print('Fold {} Accuracy> {}'.format(k + 1, acc * 100.0))
             self.model = model
 
     def train_normal(self):
@@ -46,7 +45,7 @@ class Classifier(LoadData):
         fp.write('epoch, loss,accuracy,val_loss, val_accuracy\n')
         for epoch in range(25):
             history = self.model.fit(self.train_images, self.train_labels, epochs=1, batch_size=32,
-                                validation_data=(self.test_images, self.test_labels), verbose=1)
+                                     validation_data=(self.test_images, self.test_labels), verbose=1)
             msg = '{},'.format(epoch)
             for _key in history.history.keys():
                 if _key not in each_epoch:
@@ -57,8 +56,6 @@ class Classifier(LoadData):
             fp.write(msg[:-1] + '\n')
         fp.close()
         print(each_epoch)
-
-
 
     def save_plotted_model(self):
 

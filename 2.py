@@ -3,13 +3,12 @@ Created on 7/18/20
 
 @author: dulanj
 '''
-import numpy as np
-from tensorflow import keras
-from loaddata import LoadData
 import tensorflow as tf
 from sklearn.model_selection import KFold
-from model import load_model
+
+from loaddata import LoadData
 from model import add_noise
+from model import load_model
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
@@ -21,9 +20,7 @@ class Classifier(LoadData):
     def __init__(self):
         super(Classifier, self).__init__()
         self.model = None
-    
 
-    
     def train(self):
         n_folds = 5
         kfold = KFold(n_folds, shuffle=True, random_state=1)
@@ -38,13 +35,13 @@ class Classifier(LoadData):
             history = model.fit(trainX, trainY, epochs=5, batch_size=32, validation_data=(testX, testY), verbose=1)
             # evaluate model
             _, acc = model.evaluate(self.test_images, self.test_labels, verbose=0)
-            print('Fold {} Accuracy> {}'.format(k+1, acc * 100.0))
+            print('Fold {} Accuracy> {}'.format(k + 1, acc * 100.0))
             self.model = model
 
     def train_normal(self):
         fp = open('accuracy_2.csv', 'w')
         fp.write('noise, loss,accuracy,val_loss, val_accuracy\n')
-        for nf in [0.1, 0.2, 0.4, 0.6, 1, 2, 4, 6, 10]:
+        for nf in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.5, 2]:
             train_images, test_images = add_noise(self.train_images, self.test_images, noise_factor=nf)
             model = load_model(0)
             epoch_range = 5
