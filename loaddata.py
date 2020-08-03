@@ -12,6 +12,9 @@ from tensorflow.keras.utils import to_categorical
 
 class LoadData():
     def __init__(self):
+        """
+        Here it loads and convert the data
+        """
         (train, self.train_labels), (test, self.test_labels) = self.load()
 
         train_norm = train.astype('float32')
@@ -38,6 +41,11 @@ class LoadData():
         return (x_train, trainY), (x_test, testY)
 
     def load(self):
+        """
+        Main data loading part
+        :return:
+        """
+
         mnist_data_set = tf.keras.datasets.mnist
         (trainX, trainY), (testX, testY) = mnist_data_set.load_data()
         # Reshape data
@@ -49,6 +57,9 @@ class LoadData():
         return (trainX, trainY), (testX, testY)
 
     def display(self, pixels):
+        """:arg
+        Given a vector this method will show the image
+        """
         plt.imshow(pixels, cmap='gray')
         plt.show()
 

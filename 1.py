@@ -38,11 +38,19 @@ class Classifier(LoadData):
             self.model = model
 
     def train_normal(self):
+        """:arg
+        This is the main function used to train the model
+        """
+        # Model is created in model.py python file
         self.model = load_model()
         self.save_plotted_model()
+
+        # Dictionary was created to store the training data
         each_epoch = dict()
         fp = open('accuracy.csv', 'w')
         fp.write('epoch, loss,accuracy,val_loss, val_accuracy\n')
+
+        # 25 epoches trained in a loop to take the information while training
         for epoch in range(25):
             history = self.model.fit(self.train_images, self.train_labels, epochs=1, batch_size=32,
                                      validation_data=(self.test_images, self.test_labels), verbose=1)
@@ -53,12 +61,12 @@ class Classifier(LoadData):
                 each_epoch[_key].append(history.history[_key][0])
                 msg += '{:.4f},'.format(history.history[_key][0])
 
+            # Write accuracies for each epoch to a csv file
             fp.write(msg[:-1] + '\n')
         fp.close()
         print(each_epoch)
 
     def save_plotted_model(self):
-
         print("Saving plotted model")
         plot_model(self.model, to_file='model.png', show_shapes=True)
 

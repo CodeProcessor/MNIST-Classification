@@ -31,6 +31,10 @@ class Classifier(LoadData):
                                     validation_data=(x_test_noisy, self.test_images))
 
     def train_with_denoised_data(self):
+        """:arg
+        Using autoencoders denoise the data
+        Then train using the CNN model
+        """
         self.model = load_model()
 
         x_train_noisy, x_test_noisy = add_noise(self.train_images, self.test_images, noise_factor=1)
@@ -43,6 +47,9 @@ class Classifier(LoadData):
                                      validation_data=(x_test_denoised, self.test_labels), verbose=1)
 
     def train_with_noised_data(self):
+        """:arg
+
+        Without denoising directly train using the noisy data"""
         self.model = load_model()
 
         x_train_noisy, x_test_noisy = add_noise(self.train_images, self.test_images, noise_factor=1)

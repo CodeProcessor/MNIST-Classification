@@ -10,6 +10,9 @@ import tensorflow as tf
 
 
 def load_model(verbose=1):
+    """":arg
+    This is the final version of CNN model used.
+    """
     inputs = tf.keras.Input(batch_size=32, shape=(28, 28, 1))
     x = tf.keras.layers.Conv2D(24, (5, 5), activation=tf.nn.relu)(inputs)
     x = tf.keras.layers.MaxPool2D((2, 2))(x)
@@ -47,6 +50,9 @@ def create_encoder_decorder_model():
 
 
 def create_encoder_decorder_model_v2():
+    """:arg
+    This is the final model for the autoencoder
+    """
     # Input
     x = tf.keras.layers.Input(name='inputs', shape=(28, 28, 1), dtype='float32')
     o = x
@@ -83,6 +89,9 @@ def create_encoder_decorder_model_v2():
 
 
 def add_noise(x_train, x_test, noise_factor=0.5):
+    """:arg
+    This function apply the noise for provided x train and x test datasets
+    """
     x_train_noisy = x_train + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_train.shape)
     x_test_noisy = x_test + noise_factor * np.random.normal(loc=0.0, scale=1.0, size=x_test.shape)
     x_train_noisy = np.clip(x_train_noisy, 0, 1)
